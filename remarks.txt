@@ -1,0 +1,7 @@
+aspect ratio of flappy bird = 512 x 288
+-> 256 x 144
+-> 128 x 72
+-> 64 x 36
+
+return color format of env is rgb
+display color format of cv2.imshow is bgr
