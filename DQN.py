@@ -7,22 +7,22 @@ from collections import deque
 np.random.seed(1)
 
 class DQN:
-    def __init__(self):
+    def __init__(self, action_space, maxlen=1000):
         # dqn - model; can use nadam for convergence
-        self.brain = self.__createLayers__()
+        self.brain = self.__createLayers__(action_space)
         self.brain.compile(optimizer='nadam', loss='mse')
         
         # hyperparameters
-        self.action_space = 2
+        self.action_space = action_space
         self.alpha = 0.95
-        self.gamma = 0.9
+        self.gamma = 0.95
 
         # memory
-        self.memory = deque(list(), maxlen=1000)
+        self.memory = deque(list(), maxlen=maxlen)
 
         #keras.utils.plot_model(self.brain, to_file='model.png', show_shapes=True)
 
-    def __createLayers__(self, action_space=2):
+    def __createLayers__(self, action_space):
         # create the actual model for the brain
         brain = Sequential()
         brain.add(Conv2D(filters=32, kernel_size=(8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4)))
@@ -37,26 +37,22 @@ class DQN:
         # creates a memory-fragment <s,a,r,s'>
         return tuple([state, action, reward, next_state])
 
-    def remember(self, fragment, insert_rate=2.0):
+    def remember(self, fragment, insert_rate=1.0):
         # save the memory-fragment <s,a,r,s'> state in replay-memory
-        while True:
-            value = np.random.random()
-            if value <= (insert_rate/1.414):
-                self.memory.appendleft(fragment)
-                break
-            elif value <= (insert_rate):
-                self.memory.append(fragment)
-                break
-            else:
-                self.memory.rotate(1)
+        value = np.random.random()
+        if value <= insert_rate:
+            self.memory.appendleft(fragment)
 
-    def sampleMiniBatch(self, batch_size):
+    def sampleMiniBatch(self, batch_size, insert_rate=0.25):
         # sample a mimibatch for recall process
         mini_batch = list()
+        if (batch_size * 35) >= len(self.memory):
+            insert_rate = 1
+        batch_size = min(batch_size, len(self.memory))
         for _ in range(batch_size):
             mini_batch.append(self.memory.pop())
         for fragment in mini_batch:
-            self.remember(fragment, 0.8)
+            self.remember(fragment, insert_rate)
         return mini_batch
     
     def forwardPass(self, state):
@@ -67,7 +63,7 @@ class DQN:
         # same as forwardPass but evaluate of multiple states at once
         return self.brain.predict(states)
     
-    def trainOnFragment(self, fragment):
+    def trainOnFragment(self, fragment, verbose=0, epochs=1):
         # train on a single memory-fragment <s,a,r,s'>
         state, action, reward, next_state = fragment
         predictQ = self.forwardPass(state)
@@ -75,10 +71,10 @@ class DQN:
         targetAQ = predictQ.copy()
         targetAQ[action] = max(predictNQ)*self.gamma + reward
         #print predictQ, action, reward, targetAQ #status-line
-        self.brain.fit(np.expand_dims(state, axis=0), np.expand_dims(targetAQ, axis=0), verbose=0, epochs=1)
+        self.brain.fit(np.expand_dims(state, axis=0), np.expand_dims(targetAQ, axis=0), verbose=verbose, epochs=epochs)
         #print (targetAQ-self.forwardPass(state))**2 #print-loss
 
-    def batchTrainOnFrament(self, fragments):
+    def batchTrainOnFragment(self, fragments, verbose=0, epochs=1):
         # train on multiple memory-fragments <s,a,r,s'>
         batch_size = len(fragments)
         states, actions, rewards, next_states = zip(*fragments)
@@ -95,14 +91,29 @@ class DQN:
         targetAQs[np.arange(batch_size), actions] = np.amax(predictNQs, 1) * self.gamma + rewards
 
         #print '\n\npredictQs =', predictQs, '\nactions =', actions, '\nrewards =', rewards, '\ntargetAQs =', targetAQs #status-line
-        self.brain.fit(states, targetAQs, verbose=0, epochs=1)
+        self.brain.fit(states, targetAQs, verbose=verbose, epochs=epochs)
         #print '\n\npredictQs =', (targetAQs-self.batchForwardPass(states))**2 #print-loss
 
+    def makeMove(self, state):
+        return np.argmax(self.forwardPass(state))
+
+    def loadWeights(self, weights):
+        try:
+            self.brain.load_weights(weights)
+        except:
+            print 'weights not loaded'
+
+    def saveWeights(self, weights):
+        try:
+            self.brain.save_weights(weights)
+        except:
+            print 'could not save weights'
+
 if __name__ == '__main__':
-    dqn = DQN()
+    dqn = DQN(2)
     #print dqn.forwardPass(np.random.randint(256, size=(84, 84, 4)))
     #print dqn.batchForwardPass(np.random.randint(256, size=(8, 84, 84, 4)))
-    tests = 64
+    tests = 2
     batch = list()
     while tests > 0:
         s = np.random.randint(256, size=(84, 84, 4))
@@ -113,4 +124,4 @@ if __name__ == '__main__':
         batch.append(fragment)
         dqn.trainOnFragment(fragment)
         tests -= 1
-    dqn.batchTrainOnFrament(batch)
+    dqn.batchTrainOnFragment(batch)
