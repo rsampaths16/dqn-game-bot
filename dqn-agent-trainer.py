@@ -39,6 +39,8 @@ while True:
         s1 = helper.add_cream(s, obs)
 
         # <s, a, r, s'>
+        if reward > 0:
+            reward *= 10
         fragment = agent.makeFragment(s, action, reward, s1)
         agent.remember(fragment, 1)
         score += reward

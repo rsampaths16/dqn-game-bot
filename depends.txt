@@ -1,0 +1,8 @@
+CUDA
+tensorflow
+keras
+numpy
+gym
+gym_ple # for ple games
+matplotlib
+cv2
