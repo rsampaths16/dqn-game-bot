@@ -16,6 +16,7 @@ class DQN:
         self.action_space = action_space
         self.alpha = 0.95
         self.gamma = 0.95
+        self.maxlen = maxlen
 
         # memory
         self.memory = deque(list(), maxlen=maxlen)
@@ -43,13 +44,15 @@ class DQN:
         if value <= insert_rate:
             self.memory.appendleft(fragment)
 
-    def sampleMiniBatch(self, batch_size, insert_rate=0.25):
+    def sampleMiniBatch(self, batch_size, insert_rate=0.95, sample_rate=0.15):
         # sample a mimibatch for recall process
         mini_batch = list()
-        if (batch_size * 35) >= len(self.memory):
+        if (self.maxlen * 0.95) >= len(self.memory):
             insert_rate = 1
         batch_size = min(batch_size, len(self.memory))
         for _ in range(batch_size):
+            while np.random.random(1) > sample_rate:
+                self.memory.rotate(1)
             mini_batch.append(self.memory.pop())
         for fragment in mini_batch:
             self.remember(fragment, insert_rate)

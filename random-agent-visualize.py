@@ -13,7 +13,8 @@ while True:
     score = 0
     while True:
         env.render()
-        observation, reward, done, info = env.step(env.action_space.sample())
+        x = int(input())
+        observation, reward, done, info = env.step(x)#env.action_space.sample())
         score += reward
         observation2 = cv2.resize(observation, (84, 84))
         observation2 = cv2.cvtColor(observation2, cv2.COLOR_RGB2GRAY)

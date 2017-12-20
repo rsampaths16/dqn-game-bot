@@ -10,6 +10,7 @@ import helper
 from collections import deque
 
 def call_video(episode_id):
+    return True
     if episode_id < 10:
         return True
     return np.random.random(1) <= 0.5
@@ -19,12 +20,12 @@ env = gym.make('Breakout-v0')
 #env = Monitor(env, './recordings/FlappyBird-v0', force=True, video_callable=call_video)
 env = Monitor(env, './recordings/Breakout-v0', force=True, video_callable=call_video)
 #agent = DQN(2, 5000)
-agent = DQN(4, 5000)
+agent = DQN(4, 25000)
 #agent.loadWeights('flappy.h5')
 agent.loadWeights('breakout.h5')
-eps = 0.1
-meps = 0.1
-decay = 0.9
+eps = 0
+meps = 0
+decay = 0
 episode = 0
 while True:
     observation = env.reset()
@@ -43,10 +44,10 @@ while True:
         score += reward
 
         #print 'episode =', episode, 'replay memory = ', len(agent.memory)
-        agent.batchTrainOnFragment(agent.sampleMiniBatch(batch_size=128), verbose=0)
+        agent.batchTrainOnFragment(agent.sampleMiniBatch(batch_size=32), verbose=0)
         s = s1
         if done:
-            print 'episode =', episode, '\nscore =', score, '\nreplay memory =', len(agent.memory), 'eps =', eps
+            print 'episode =', episode, '\nscore =', score, '\nreplay memory =', len(agent.memory), '\neps =', eps
             break
     eps = meps + ((eps - meps) * decay)
     #agent.saveWeights('flappy.h5')
