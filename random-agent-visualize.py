@@ -5,23 +5,17 @@ import gym_ple #for ple-games i.e. python-learning-environment
 import matplotlib.pyplot as plt
 import cv2
 
-#env = gym.make('FlappyBird-v0')
-env = gym.make('Breakout-v0')
+GAME = 'Breakout-v0'
+env = gym.make(GAME)
 print env.action_space
+
 while True:
     env.reset()
     score = 0
     while True:
         env.render()
-        x = int(input())
-        observation, reward, done, info = env.step(x)#env.action_space.sample())
+        observation, reward, done, info = env.step(env.action_space.sample())
         score += reward
-        observation2 = cv2.resize(observation, (84, 84))
-        observation2 = cv2.cvtColor(observation2, cv2.COLOR_RGB2GRAY)
-        #cv2.imshow('how', observation2)
-        #cv2.waitKey(1)
         if done:
-            print observation.shape
-            print observation2.shape
             print score
             break
