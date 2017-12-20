@@ -7,15 +7,15 @@ from collections import deque
 np.random.seed(1)
 
 class DQN:
-    def __init__(self, action_space, maxlen=1000):
-        # dqn - model; can use nadam for convergence
+    def __init__(self, action_space, maxlen=1000, gamma=0.95):
+        # dqn - model; using nadam for convergence
         self.brain = self.__createLayers__(action_space)
         self.brain.compile(optimizer='nadam', loss='mse')
         
-        # hyperparameters
+        # parameters
         self.action_space = action_space
-        self.alpha = 0.95
-        self.gamma = 0.95
+        self.alpha = 0.95 #not used anywhere as of yet
+        self.gamma = gamma
         self.maxlen = maxlen
 
         # memory
@@ -73,9 +73,7 @@ class DQN:
         predictNQ = self.forwardPass(next_state)
         targetAQ = predictQ.copy()
         targetAQ[action] = max(predictNQ)*self.gamma + reward
-        #print predictQ, action, reward, targetAQ #status-line
         self.brain.fit(np.expand_dims(state, axis=0), np.expand_dims(targetAQ, axis=0), verbose=verbose, epochs=epochs)
-        #print (targetAQ-self.forwardPass(state))**2 #print-loss
 
     def batchTrainOnFragment(self, fragments, verbose=0, epochs=1):
         # train on multiple memory-fragments <s,a,r,s'>
@@ -93,9 +91,7 @@ class DQN:
         targetAQs = predictQs.copy()
         targetAQs[np.arange(batch_size), actions] = np.amax(predictNQs, 1) * self.gamma + rewards
 
-        #print '\n\npredictQs =', predictQs, '\nactions =', actions, '\nrewards =', rewards, '\ntargetAQs =', targetAQs #status-line
         self.brain.fit(states, targetAQs, verbose=verbose, epochs=epochs)
-        #print '\n\npredictQs =', (targetAQs-self.batchForwardPass(states))**2 #print-loss
 
     def makeMove(self, state):
         return np.argmax(self.forwardPass(state))
@@ -112,7 +108,7 @@ class DQN:
         except:
             print 'could not save weights'
 
-if __name__ == '__main__':
+def debug():
     dqn = DQN(2)
     #print dqn.forwardPass(np.random.randint(256, size=(84, 84, 4)))
     #print dqn.batchForwardPass(np.random.randint(256, size=(8, 84, 84, 4)))
@@ -128,3 +124,8 @@ if __name__ == '__main__':
         dqn.trainOnFragment(fragment)
         tests -= 1
     dqn.batchTrainOnFragment(batch)
+
+if __name__ == '__main__':
+    #debug()
+    pass
+

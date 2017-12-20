@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 
 def make_pie(image, repeater):
+    "repeat images togeather and club them"
     image = np.expand_dims(image, 2)
     tp = tuple()
     for i in range(repeater):
@@ -10,17 +11,25 @@ def make_pie(image, repeater):
     return pie
 
 def add_cream(pie, image):
+    "rotate frame and add an image"
     pie = np.roll(pie, 1, axis=2)
     pie[:,:,0] = image
     return pie
 
 def convert_frame(image, sze=(84, 84)):
+    "from color img -> sze bw img"
     image = cv2.resize(image, sze)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     return image
 
 def coin_toss(flappy = 0.5):
     return 0 if np.random.random(1) <= flappy else 1
+
+def call_video(episode_id):
+    return True
+    if episode_id < 10:
+        return True
+    return np.random.random(1) <= 0.5
 
 def debug():
     img0 = np.random.random((2, 3))
@@ -80,6 +89,7 @@ def debug2():
     print '\n\n\n\n\n\n\n'
 
 
-#if __name__ == '__main__':
+if __name__ == '__main__':
     #debug()
     #debug2()
+    pass
